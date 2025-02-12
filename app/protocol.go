@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/binary"
+	"log"
 )
 
 type Utility interface {
@@ -35,11 +36,16 @@ type ResponseMessage struct {
 	tag_buffer int16
 
 	// api keys
+	api_keys []ApiKey
+
+	throttle_time_ms int32
+}
+
+type ApiKey struct {
 	request_api_key int16
 	min_version     int16
 	max_version     int16
-
-	throttle_time_ms int32
+	tag_buffer      int16
 }
 
 type RequestHeaderV2 struct {
@@ -72,12 +78,12 @@ func NewRequestMessage(request_bytes []byte) *RequestMessage {
 
 func NewResponseMessage(correlation_id int32, error_code int16, request_api_key int16) *ResponseMessage {
 	return &ResponseMessage{
-		message_size:     16,
-		correlation_id:   correlation_id,
-		error_code:       error_code,
-		request_api_key:  request_api_key,
-		min_version:      0,
-		max_version:      4,
+		message_size:   0,
+		correlation_id: correlation_id,
+		error_code:     error_code,
+		api_keys: []ApiKey{ApiKey{request_api_key: request_api_key,
+			min_version: 0,
+			max_version: 4}},
 		throttle_time_ms: 0,
 		tag_buffer:       0,
 	}
@@ -92,17 +98,28 @@ func (message *ResponseMessage) convertToBytes() []byte {
 	//   max_version => INT16
 	// throttle_time_ms => INT32
 
-	output := make([]byte, 0)
+	body := make([]byte, 0)
 
-	output = binary.BigEndian.AppendUint32(output, uint32(message.message_size))
-	output = binary.BigEndian.AppendUint32(output, uint32(message.correlation_id))
-	output = binary.BigEndian.AppendUint16(output, uint16(message.error_code))
-	output = binary.BigEndian.AppendUint16(output, uint16(message.request_api_key))
-	output = binary.BigEndian.AppendUint16(output, uint16(message.min_version))
-	output = binary.BigEndian.AppendUint16(output, uint16(message.max_version))
-	output = binary.BigEndian.AppendUint16(output, uint16(message.tag_buffer))
-	output = binary.BigEndian.AppendUint32(output, uint32(message.throttle_time_ms))
-	output = binary.BigEndian.AppendUint16(output, uint16(message.tag_buffer))
+	body = binary.BigEndian.AppendUint32(body, uint32(message.correlation_id))
+	body = binary.BigEndian.AppendUint16(body, uint16(message.error_code))
+
+	body = binary.BigEndian.AppendUint16(body, uint16(len(message.api_keys)))
+	for _, item := range message.api_keys {
+		body = binary.BigEndian.AppendUint16(body, uint16(item.request_api_key))
+		body = binary.BigEndian.AppendUint16(body, uint16(item.min_version))
+		body = binary.BigEndian.AppendUint16(body, uint16(item.max_version))
+	}
+
+	body = binary.BigEndian.AppendUint16(body, uint16(message.tag_buffer))
+	body = binary.BigEndian.AppendUint32(body, uint32(message.throttle_time_ms))
+	body = binary.BigEndian.AppendUint16(body, uint16(message.tag_buffer))
+
+	log.Print("Length of body")
+	log.Print(len(body))
+
+	output := make([]byte, 0)
+	output = binary.BigEndian.AppendUint16(output, uint16(len(body)))
+	output = append(output, body...)
 
 	return output
 }
