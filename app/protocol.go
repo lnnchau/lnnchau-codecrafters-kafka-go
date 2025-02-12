@@ -15,15 +15,29 @@ type RequestMessage struct {
 }
 
 type ResponseMessage struct {
+
+	// ApiVersions Response (Version: 4) => error_code [api_keys] throttle_time_ms TAG_BUFFER
+	// error_code => INT16
+	// api_keys => api_key min_version max_version TAG_BUFFER
+	//   api_key => INT16
+	//   min_version => INT16
+	//   max_version => INT16
+	// throttle_time_ms => INT32
+
 	message_size int32
 
 	// header
 	correlation_id int32
 
 	// body
-	error_code      int16
+	error_code int16
+
+	// api keys
 	request_api_key int16
+	min_version     int16
 	max_version     int16
+
+	throttle_time_ms int32
 }
 
 type RequestHeaderV2 struct {
@@ -56,22 +70,34 @@ func NewRequestMessage(request_bytes []byte) *RequestMessage {
 
 func NewResponseMessage(correlation_id int32, error_code int16, request_api_key int16) *ResponseMessage {
 	return &ResponseMessage{
-		message_size:    8,
-		correlation_id:  correlation_id,
-		error_code:      error_code,
-		request_api_key: request_api_key,
-		max_version:     4,
+		message_size:     16,
+		correlation_id:   correlation_id,
+		error_code:       error_code,
+		request_api_key:  request_api_key,
+		min_version:      0,
+		max_version:      4,
+		throttle_time_ms: 0,
 	}
 }
 
 func (message *ResponseMessage) convertToBytes() []byte {
+	// ApiVersions Response (Version: 4) => error_code [api_keys] throttle_time_ms TAG_BUFFER
+	// error_code => INT16
+	// api_keys => api_key min_version max_version TAG_BUFFER
+	//   api_key => INT16
+	//   min_version => INT16
+	//   max_version => INT16
+	// throttle_time_ms => INT32
+
 	output := make([]byte, 0)
 
 	output = binary.BigEndian.AppendUint32(output, uint32(message.message_size))
 	output = binary.BigEndian.AppendUint32(output, uint32(message.correlation_id))
 	output = binary.BigEndian.AppendUint16(output, uint16(message.error_code))
 	output = binary.BigEndian.AppendUint16(output, uint16(message.request_api_key))
+	output = binary.BigEndian.AppendUint16(output, uint16(message.min_version))
 	output = binary.BigEndian.AppendUint16(output, uint16(message.max_version))
+	output = binary.BigEndian.AppendUint32(output, uint32(message.throttle_time_ms))
 
 	return output
 }
