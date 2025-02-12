@@ -33,7 +33,7 @@ type ResponseMessage struct {
 	// body
 	error_code int16
 
-	tag_buffer int16
+	tag_buffer int8
 
 	// api keys
 	api_keys []ApiKey
@@ -45,7 +45,7 @@ type ApiKey struct {
 	request_api_key int16
 	min_version     int16
 	max_version     int16
-	tag_buffer      int16
+	tag_buffer      int8
 }
 
 type RequestHeaderV2 struct {
@@ -81,9 +81,11 @@ func NewResponseMessage(correlation_id int32, error_code int16, request_api_key 
 		message_size:   0,
 		correlation_id: correlation_id,
 		error_code:     error_code,
-		api_keys: []ApiKey{ApiKey{request_api_key: request_api_key,
-			min_version: 0,
-			max_version: 4}},
+		api_keys: []ApiKey{ApiKey{
+			request_api_key: request_api_key,
+			min_version:     0,
+			max_version:     4,
+			tag_buffer:      0}},
 		throttle_time_ms: 0,
 		tag_buffer:       0,
 	}
@@ -102,23 +104,24 @@ func (message *ResponseMessage) convertToBytes() []byte {
 
 	body = binary.BigEndian.AppendUint32(body, uint32(message.correlation_id))
 	body = binary.BigEndian.AppendUint16(body, uint16(message.error_code))
+	body = append(body, uint8(1+len(message.api_keys)))
 
-	body = binary.BigEndian.AppendUint16(body, uint16(len(message.api_keys)))
+	log.Print(message.api_keys)
 	for _, item := range message.api_keys {
 		body = binary.BigEndian.AppendUint16(body, uint16(item.request_api_key))
 		body = binary.BigEndian.AppendUint16(body, uint16(item.min_version))
 		body = binary.BigEndian.AppendUint16(body, uint16(item.max_version))
+		body = append(body, 0)
 	}
 
-	body = binary.BigEndian.AppendUint16(body, uint16(message.tag_buffer))
 	body = binary.BigEndian.AppendUint32(body, uint32(message.throttle_time_ms))
-	body = binary.BigEndian.AppendUint16(body, uint16(message.tag_buffer))
+	body = append(body, 0)
 
 	log.Print("Length of body")
 	log.Print(len(body))
 
 	output := make([]byte, 0)
-	output = binary.BigEndian.AppendUint16(output, uint16(len(body)))
+	output = binary.BigEndian.AppendUint32(output, uint32(len(body)))
 	output = append(output, body...)
 
 	return output

@@ -40,7 +40,7 @@ func main() {
 
 	// business logic
 	error_code := 0
-	if requestMessage.header.request_api_version > 4 {
+	if requestMessage.header.request_api_version != 4 {
 		error_code = 35
 	}
 
@@ -48,7 +48,6 @@ func main() {
 
 	log.Print("new request message")
 	log.Print(responseMessage)
-	log.Print(responseMessage.request_api_key)
 	log.Print(responseMessage.error_code)
 
 	output := responseMessage.convertToBytes()
