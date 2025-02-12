@@ -32,6 +32,8 @@ type ResponseMessage struct {
 	// body
 	error_code int16
 
+	tag_buffer int16
+
 	// api keys
 	request_api_key int16
 	min_version     int16
@@ -77,6 +79,7 @@ func NewResponseMessage(correlation_id int32, error_code int16, request_api_key 
 		min_version:      0,
 		max_version:      4,
 		throttle_time_ms: 0,
+		tag_buffer:       0,
 	}
 }
 
@@ -97,7 +100,9 @@ func (message *ResponseMessage) convertToBytes() []byte {
 	output = binary.BigEndian.AppendUint16(output, uint16(message.request_api_key))
 	output = binary.BigEndian.AppendUint16(output, uint16(message.min_version))
 	output = binary.BigEndian.AppendUint16(output, uint16(message.max_version))
+	output = binary.BigEndian.AppendUint16(output, uint16(message.tag_buffer))
 	output = binary.BigEndian.AppendUint32(output, uint32(message.throttle_time_ms))
+	output = binary.BigEndian.AppendUint16(output, uint16(message.tag_buffer))
 
 	return output
 }
