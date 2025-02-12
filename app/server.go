@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net"
 	"os"
 )
@@ -23,11 +24,35 @@ func main() {
 	}
 
 	c, err := l.Accept()
-	defer c.Close()
 	if err != nil {
 		fmt.Println("Error accepting connection: ", err.Error())
 		os.Exit(1)
 	}
+	defer c.Close()
 
-	c.Write([]byte{0, 0, 0, 1, 0, 0, 0, 7})
+	request_bytes := make([]byte, 1024)
+	c.Read(request_bytes)
+
+	requestMessage := NewRequestMessage(request_bytes)
+	log.Print("new request message")
+	log.Print(requestMessage)
+	log.Print(requestMessage.header.request_api_version)
+
+	// business logic
+	error_code := 0
+	if requestMessage.header.request_api_version > 4 {
+		error_code = 35
+	}
+
+	responseMessage := NewResponseMessage(requestMessage.header.correlation_id, int16(error_code), requestMessage.header.request_api_key)
+
+	log.Print("new request message")
+	log.Print(responseMessage)
+	log.Print(responseMessage.request_api_key)
+	log.Print(responseMessage.error_code)
+
+	output := responseMessage.convertToBytes()
+	log.Print("output")
+	log.Print(output)
+	c.Write(output)
 }
