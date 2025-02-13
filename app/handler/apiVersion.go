@@ -11,15 +11,6 @@ import (
 type ApiVersionHandler struct{}
 
 type ApiVersion struct {
-
-	// ApiVersions Response (Version: 4) => error_code [api_keys] throttle_time_ms TAG_BUFFER
-	// error_code => INT16
-	// api_keys => api_key min_version max_version TAG_BUFFER
-	//   api_key => INT16
-	//   min_version => INT16
-	//   max_version => INT16
-	// throttle_time_ms => INT32
-
 	tag_buffer       int8
 	api_keys         []ApiKey
 	throttle_time_ms int32
@@ -39,7 +30,14 @@ func (handler *ApiVersionHandler) getAPIKeys(req common.RequestMessage) []ApiKey
 			min_version:     0,
 			max_version:     4,
 			tag_buffer:      0,
-		}}
+		},
+		ApiKey{
+			request_api_key: 75,
+			min_version:     0,
+			max_version:     0,
+			tag_buffer:      0,
+		},
+	}
 }
 
 func (handler *ApiVersionHandler) createAPIVersionObject(req common.RequestMessage) *ApiVersion {
@@ -60,6 +58,14 @@ func (handler *ApiVersionHandler) validate(req common.RequestMessage) common.Err
 }
 
 func (handler *ApiVersionHandler) Process(w io.Writer, req common.RequestMessage) {
+	// ApiVersions Response (Version: 4) => error_code [api_keys] throttle_time_ms TAG_BUFFER
+	// error_code => INT16
+	// api_keys => api_key min_version max_version TAG_BUFFER
+	//   api_key => INT16
+	//   min_version => INT16
+	//   max_version => INT16
+	// throttle_time_ms => INT32
+
 	error_code := handler.validate(req)
 
 	api_version_object := handler.createAPIVersionObject(req)
