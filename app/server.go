@@ -32,15 +32,17 @@ func main() {
 		os.Exit(1)
 	}
 	defer c.Close()
+	for {
+		request_bytes := make([]byte, 1024)
+		c.Read(request_bytes)
 
-	request_bytes := make([]byte, 1024)
-	c.Read(request_bytes)
+		requestMessage := common.ParseRequest(request_bytes)
+		log.Print("new request message")
+		log.Print(requestMessage)
 
-	requestMessage := common.ParseRequest(request_bytes)
-	log.Print("new request message")
-	log.Print(requestMessage)
+		handler := handler.GetApiHandlerByKey(requestMessage.Header.RequestApiKey)
 
-	handler := handler.GetApiHandlerByKey(requestMessage.Header.RequestApiKey)
+		handler.Process(c, requestMessage)
+	}
 
-	handler.Process(c, requestMessage)
 }
