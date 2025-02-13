@@ -26,23 +26,28 @@ func main() {
 		os.Exit(1)
 	}
 
-	c, err := l.Accept()
-	if err != nil {
-		fmt.Println("Error accepting connection: ", err.Error())
-		os.Exit(1)
-	}
-	defer c.Close()
 	for {
-		request_bytes := make([]byte, 1024)
-		c.Read(request_bytes)
+		conn, err := l.Accept()
+		if err != nil {
+			fmt.Println("Error accepting connection: ", err.Error())
+			os.Exit(1)
+		}
 
-		requestMessage := common.ParseRequest(request_bytes)
-		log.Print("new request message")
-		log.Print(requestMessage)
+		go func(c net.Conn) {
+			defer c.Close()
+			for {
+				request_bytes := make([]byte, 1024)
+				c.Read(request_bytes)
 
-		handler := handler.GetApiHandlerByKey(requestMessage.Header.RequestApiKey)
+				requestMessage := common.ParseRequest(request_bytes)
+				log.Print("new request message")
+				log.Print(requestMessage)
 
-		handler.Process(c, requestMessage)
+				handler := handler.GetApiHandlerByKey(requestMessage.Header.RequestApiKey)
+
+				handler.Process(c, requestMessage)
+			}
+		}(conn)
+
 	}
-
 }
