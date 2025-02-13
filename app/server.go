@@ -5,6 +5,9 @@ import (
 	"log"
 	"net"
 	"os"
+
+	"github.com/codecrafters-io/kafka-starter-go/app/common"
+	"github.com/codecrafters-io/kafka-starter-go/app/handler"
 )
 
 // Ensures gofmt doesn't remove the "net" and "os" imports in stage 1 (feel free to remove this!)
@@ -33,25 +36,11 @@ func main() {
 	request_bytes := make([]byte, 1024)
 	c.Read(request_bytes)
 
-	requestMessage := NewRequestMessage(request_bytes)
+	requestMessage := common.ParseRequest(request_bytes)
 	log.Print("new request message")
 	log.Print(requestMessage)
-	log.Print(requestMessage.header.request_api_version)
 
-	// business logic
-	error_code := 0
-	if requestMessage.header.request_api_version != 4 {
-		error_code = 35
-	}
+	handler := handler.GetApiHandlerByKey(requestMessage.Header.RequestApiKey)
 
-	responseMessage := NewResponseMessage(requestMessage.header.correlation_id, int16(error_code), requestMessage.header.request_api_key)
-
-	log.Print("new request message")
-	log.Print(responseMessage)
-	log.Print(responseMessage.error_code)
-
-	output := responseMessage.convertToBytes()
-	log.Print("output")
-	log.Print(output)
-	c.Write(output)
+	handler.Process(c, requestMessage)
 }
