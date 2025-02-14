@@ -26,13 +26,13 @@ type ApiKey struct {
 func (handler *ApiVersionHandler) getAPIKeys(req common.RequestMessage) []ApiKey {
 	return []ApiKey{
 		ApiKey{
-			request_api_key: req.Header.RequestApiKey,
+			request_api_key: 18, // TODO: use enums
 			min_version:     0,
 			max_version:     4,
 			tag_buffer:      0,
 		},
 		ApiKey{
-			request_api_key: 75,
+			request_api_key: 75, // TODO: use enums
 			min_version:     0,
 			max_version:     0,
 			tag_buffer:      0,
@@ -51,7 +51,7 @@ func (handler *ApiVersionHandler) createAPIVersionObject(req common.RequestMessa
 func (handler *ApiVersionHandler) validate(req common.RequestMessage) common.Error {
 	error_code := 0
 	if req.Header.RequestApiVerison != 4 {
-		error_code = 35
+		error_code = common.ERROR_CODE_UNSUPPORTED_VERSION
 	}
 
 	return common.Error(error_code)
