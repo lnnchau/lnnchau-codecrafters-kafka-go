@@ -1,6 +1,8 @@
-package common
+package models
 
-import "encoding/binary"
+import (
+	"encoding/binary"
+)
 
 // Requests
 type RequestHeaderV2 struct {
@@ -17,11 +19,11 @@ type RequestHeaderV2 struct {
 	// TAG_BUFFER        []string // Optional tagged fields
 }
 
-func (header RequestHeaderV2) Serialize() ([]byte, error) {
+func (header *RequestHeaderV2) Serialize() ([]byte, error) {
 	return nil, nil
 }
 
-func (header RequestHeaderV2) Deserialize(request_bytes []byte) ([]byte, error) {
+func (header *RequestHeaderV2) Deserialize(request_bytes []byte) ([]byte, error) {
 	cursor := 0
 	field_length := 2
 	request_api_key := binary.BigEndian.Uint16(request_bytes[cursor : cursor+field_length])
@@ -35,7 +37,7 @@ func (header RequestHeaderV2) Deserialize(request_bytes []byte) ([]byte, error) 
 	correlation_id := binary.BigEndian.Uint32(request_bytes[cursor : cursor+field_length])
 	cursor += field_length
 
-	field_length = 4
+	field_length = 2
 	client_id_length := binary.BigEndian.Uint16(request_bytes[cursor : cursor+field_length])
 	cursor += field_length
 
@@ -51,6 +53,8 @@ func (header RequestHeaderV2) Deserialize(request_bytes []byte) ([]byte, error) 
 	header.RequestApiVerison = int16(request_api_version)
 	header.CorrelationId = int32(correlation_id)
 	header.ClientId = string(client_id)
+
+	// log.Printf("Remaining bytes %v %v %v", request_bytes[cursor:], cursor, cursor+field_length)
 
 	return request_bytes[cursor:], nil
 }

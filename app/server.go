@@ -6,8 +6,8 @@ import (
 	"net"
 	"os"
 
-	"github.com/codecrafters-io/kafka-starter-go/app/common"
 	"github.com/codecrafters-io/kafka-starter-go/app/handler"
+	"github.com/codecrafters-io/kafka-starter-go/app/utils"
 )
 
 // Ensures gofmt doesn't remove the "net" and "os" imports in stage 1 (feel free to remove this!)
@@ -26,6 +26,9 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Dummy Load DB
+	_ = utils.ParseLogFile("/tmp/kraft-combined-logs/__cluster_metadata-0/00000000000000000000.log")
+
 	for {
 		conn, err := l.Accept()
 		if err != nil {
@@ -39,9 +42,9 @@ func main() {
 				request_bytes := make([]byte, 1024)
 				c.Read(request_bytes)
 
-				requestMessage := common.ParseRequest(request_bytes)
+				requestMessage := utils.ParseRequest(request_bytes)
 				log.Print("new request message")
-				log.Print(requestMessage)
+				// log.Print(requestMessage)
 
 				handler := handler.GetApiHandlerByKey(requestMessage.Header.RequestApiKey)
 

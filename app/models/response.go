@@ -1,6 +1,8 @@
-package common
+package models
 
-import "encoding/binary"
+import (
+	"encoding/binary"
+)
 
 // Requests
 type RequestResponseHeaderV0 struct {
@@ -8,14 +10,14 @@ type RequestResponseHeaderV0 struct {
 	// TAG_BUFFER        []string // Optional tagged fields
 }
 
-func (header RequestResponseHeaderV0) Serialize() ([]byte, error) {
+func (header *RequestResponseHeaderV0) Serialize() ([]byte, error) {
 	output := make([]byte, 0)
 	output = binary.BigEndian.AppendUint32(output, uint32(header.CorrelationId))
 	output = append(output, 0x00) // tag buffer
 	return output, nil
 }
 
-func (header RequestResponseHeaderV0) Deserialize(bytes []byte) ([]byte, error) {
+func (header *RequestResponseHeaderV0) Deserialize(bytes []byte) ([]byte, error) {
 	return nil, nil
 }
 
@@ -25,7 +27,7 @@ type ResponseMessage struct {
 	Body        Serializer
 }
 
-func (resp ResponseMessage) Serialize() ([]byte, error) {
+func (resp *ResponseMessage) Serialize() ([]byte, error) {
 	response := make([]byte, 0)
 	header_bytes, _ := resp.Header.Serialize()
 	body_bytes, _ := resp.Body.Serialize()
@@ -38,6 +40,6 @@ func (resp ResponseMessage) Serialize() ([]byte, error) {
 	return output, nil
 }
 
-func (resp ResponseMessage) Deserialize(bytes []byte) ([]byte, error) {
+func (resp *ResponseMessage) Deserialize(bytes []byte) ([]byte, error) {
 	return nil, nil
 }

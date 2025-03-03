@@ -6,47 +6,37 @@ import (
 	"log"
 
 	"github.com/codecrafters-io/kafka-starter-go/app/common"
-	"github.com/google/uuid"
-)
-
-const (
-	TOPIC_ID = "00000000-0000-0000-0000-000000000000"
+	"github.com/codecrafters-io/kafka-starter-go/app/models"
 )
 
 type DescribeTopicPartitionsHandler struct{}
 
 type DescribeTopicPartitions struct {
-	topics                   []Topic
+	topics                   []models.Topic
 	response_partition_limit int32
-	cursor                   int8
-	throttle_time_ms         int32
-}
-
-type Topic struct {
-	TopicName string
+	// cursor                   int8
+	throttle_time_ms int32
 }
 
 func (topic_partition_object *DescribeTopicPartitions) Deserialize(body []byte) ([]byte, error) {
-	topics := make([]Topic, 0)
+	topics := make([]models.Topic, 0)
 
 	// Topic Array
 	topic_array_length := int(body[0]) // topics array + 1
-	cursor := 1
+
 	log.Printf("Topic length from Request %d", topic_array_length)
+
+	cursor := 1
+	body = body[cursor:]
 	for i := 0; i < topic_array_length-1; i++ {
-		topic_name_length := int(body[cursor])
-
-		log.Printf("Extract topic #%d from request, length %v", i, body[cursor])
-
-		offset_topic_name := cursor + 1
-		topics = append(topics, Topic{
-			TopicName: string(body[offset_topic_name : offset_topic_name+topic_name_length-1]),
-		})
-		cursor = offset_topic_name + topic_name_length + 1
-		log.Printf("Topic length %d Topic name %s\n", topic_name_length, string(body[offset_topic_name:offset_topic_name+topic_name_length]))
+		log.Printf("Extracting Topic #%d", i)
+		topic := models.Topic{}
+		body, _ = topic.Deserialize(body)
+		topics = append(topics, topic)
 	}
 
 	// Response Partition Limit
+	cursor = 0
 	response_partition_limit := binary.BigEndian.Uint32(body[cursor : cursor+4])
 	cursor += 4
 
@@ -69,24 +59,8 @@ func (topic_partition_object *DescribeTopicPartitions) Serialize() ([]byte, erro
 
 	log.Printf("Length of topics %d", uint8(1+len(topic_partition_object.topics)))
 	for _, item := range topic_partition_object.topics {
-		output = binary.BigEndian.AppendUint16(output, common.ERROR_CODE_UNKNOWN_TOPIC_OR_PARTITION)
-
-		log.Printf("Topic name %s %d\n", item.TopicName, uint8(1+len(item.TopicName)))
-		output = append(output, uint8(1+len(item.TopicName)))
-		output = append(output, []byte(item.TopicName)...)
-
-		u, err := uuid.Parse(TOPIC_ID)
-		if err != nil {
-			// TODO: append meaningful message to error
-			return nil, err
-		}
-		output = append(output, u[:]...)
-
-		output = append(output, 0) // IS INTERNAL
-		output = append(output, 1) // PARTITION ARRAY
-
-		output = append(output, []byte{0, 0, 0, 0}...) // A 4-byte integer (bitfield) representing the authorized operations for this topic.
-		output = append(output, 0x00)
+		serialized_topic, _ := item.Serialize()
+		output = append(output, serialized_topic...)
 	}
 
 	output = append(output, 0xff) // next cursor
@@ -98,21 +72,32 @@ func (topic_partition_object *DescribeTopicPartitions) Serialize() ([]byte, erro
 	return output, nil
 }
 
-func (handler *DescribeTopicPartitionsHandler) validate(req common.RequestMessage) common.Error {
+func (handler *DescribeTopicPartitionsHandler) validate(req models.RequestMessage) common.Error {
 	return common.Error(0)
 }
 
-func (handler *DescribeTopicPartitionsHandler) Process(w io.Writer, req common.RequestMessage) {
+func (handler *DescribeTopicPartitionsHandler) Process(w io.Writer, req models.RequestMessage) {
 
 	// TODO: redesign validate
+	log.Print("To be validate")
 	_ = handler.validate(req)
 
-	header_obj := common.RequestResponseHeaderV0{CorrelationId: req.Header.CorrelationId}
+	header_obj := models.RequestResponseHeaderV0{CorrelationId: req.Header.CorrelationId}
 
+	log.Print("To be create topic_partition_object")
 	topic_partition_object := DescribeTopicPartitions{}
 	_, _ = topic_partition_object.Deserialize(req.Body)
 
-	resp_msg := common.ResponseMessage{
+	for i := 0; i < len(topic_partition_object.topics); i++ {
+		topic_in_db, exists := models.DummyDb[topic_partition_object.topics[i].TopicName]
+		if exists {
+			topic_partition_object.topics[i] = topic_in_db
+		} else {
+			topic_partition_object.topics[i].ErrorCode = common.ERROR_CODE_UNKNOWN_TOPIC_OR_PARTITION
+		}
+	}
+
+	resp_msg := models.ResponseMessage{
 		Header: &header_obj,
 		Body:   &topic_partition_object,
 	}

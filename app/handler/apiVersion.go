@@ -6,6 +6,7 @@ import (
 	"log"
 
 	"github.com/codecrafters-io/kafka-starter-go/app/common"
+	"github.com/codecrafters-io/kafka-starter-go/app/models"
 )
 
 type ApiVersionHandler struct{}
@@ -23,15 +24,15 @@ type ApiKey struct {
 	tag_buffer      int8
 }
 
-func (handler *ApiVersionHandler) getAPIKeys(req common.RequestMessage) []ApiKey {
+func (handler *ApiVersionHandler) getAPIKeys(req models.RequestMessage) []ApiKey {
 	return []ApiKey{
-		ApiKey{
+		{
 			request_api_key: 18, // TODO: use enums
 			min_version:     0,
 			max_version:     4,
 			tag_buffer:      0,
 		},
-		ApiKey{
+		{
 			request_api_key: 75, // TODO: use enums
 			min_version:     0,
 			max_version:     0,
@@ -40,7 +41,7 @@ func (handler *ApiVersionHandler) getAPIKeys(req common.RequestMessage) []ApiKey
 	}
 }
 
-func (handler *ApiVersionHandler) createAPIVersionObject(req common.RequestMessage) *ApiVersion {
+func (handler *ApiVersionHandler) createAPIVersionObject(req models.RequestMessage) *ApiVersion {
 	return &ApiVersion{
 		api_keys:         handler.getAPIKeys(req),
 		throttle_time_ms: 0,
@@ -48,7 +49,7 @@ func (handler *ApiVersionHandler) createAPIVersionObject(req common.RequestMessa
 	}
 }
 
-func (handler *ApiVersionHandler) validate(req common.RequestMessage) common.Error {
+func (handler *ApiVersionHandler) validate(req models.RequestMessage) common.Error {
 	error_code := 0
 	if req.Header.RequestApiVerison != 4 {
 		error_code = common.ERROR_CODE_UNSUPPORTED_VERSION
@@ -57,7 +58,7 @@ func (handler *ApiVersionHandler) validate(req common.RequestMessage) common.Err
 	return common.Error(error_code)
 }
 
-func (handler *ApiVersionHandler) Process(w io.Writer, req common.RequestMessage) {
+func (handler *ApiVersionHandler) Process(w io.Writer, req models.RequestMessage) {
 	// ApiVersions Response (Version: 4) => error_code [api_keys] throttle_time_ms TAG_BUFFER
 	// error_code => INT16
 	// api_keys => api_key min_version max_version TAG_BUFFER
