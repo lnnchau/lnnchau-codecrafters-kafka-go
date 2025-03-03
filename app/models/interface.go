@@ -1,6 +1,4 @@
-package common
-
-type Error int16
+package models
 
 type Serializer interface {
 	Serialize() ([]byte, error)
