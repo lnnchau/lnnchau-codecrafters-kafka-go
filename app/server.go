@@ -41,7 +41,7 @@ func main() {
 
 				requestMessage := common.ParseRequest(request_bytes)
 				log.Print("new request message")
-				log.Print(requestMessage)
+				// log.Print(requestMessage)
 
 				handler := handler.GetApiHandlerByKey(requestMessage.Header.RequestApiKey)
 
