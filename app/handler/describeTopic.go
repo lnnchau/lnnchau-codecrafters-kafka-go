@@ -88,11 +88,15 @@ func (handler *DescribeTopicPartitionsHandler) Process(w io.Writer, req models.R
 	topic_partition_object := DescribeTopicPartitions{}
 	_, _ = topic_partition_object.Deserialize(req.Body)
 
+	log.Printf("Length of topic_partition_object.topics %v", len(topic_partition_object.topics))
+
 	for i := 0; i < len(topic_partition_object.topics); i++ {
 		topic_in_db, exists := models.DummyDb[topic_partition_object.topics[i].TopicName]
 		if exists {
+			log.Printf("exists %v", topic_partition_object.topics[i].TopicName)
 			topic_partition_object.topics[i] = topic_in_db
 		} else {
+			log.Printf("Not exist %v", topic_partition_object.topics[i].TopicName)
 			topic_partition_object.topics[i].ErrorCode = common.ERROR_CODE_UNKNOWN_TOPIC_OR_PARTITION
 		}
 	}
