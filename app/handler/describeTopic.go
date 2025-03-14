@@ -22,13 +22,13 @@ func (topic_partition_object *DescribeTopicPartitions) Deserialize(body []byte) 
 	topics := make([]models.Topic, 0)
 
 	// Topic Array
-	topic_array_length := int(body[0]) // topics array + 1
+	topic_array_length := int(body[0]) - 1 // topics array + 1
 
 	log.Printf("Topic length from Request %d", topic_array_length)
 
 	cursor := 1
 	body = body[cursor:]
-	for i := 0; i < topic_array_length-1; i++ {
+	for i := 0; i < topic_array_length; i++ {
 		log.Printf("Extracting Topic #%d", i)
 		topic := models.Topic{}
 		body, _ = topic.Deserialize(body)
@@ -79,7 +79,7 @@ func (handler *DescribeTopicPartitionsHandler) validate(req models.RequestMessag
 func (handler *DescribeTopicPartitionsHandler) Process(w io.Writer, req models.RequestMessage) {
 
 	// TODO: redesign validate
-	log.Print("To be validate")
+	// log.Print("To be validate")
 	_ = handler.validate(req)
 
 	header_obj := models.RequestResponseHeaderV0{CorrelationId: req.Header.CorrelationId}
@@ -88,7 +88,7 @@ func (handler *DescribeTopicPartitionsHandler) Process(w io.Writer, req models.R
 	topic_partition_object := DescribeTopicPartitions{}
 	_, _ = topic_partition_object.Deserialize(req.Body)
 
-	log.Printf("Length of topic_partition_object.topics %v", len(topic_partition_object.topics))
+	// log.Printf("Length of topic_partition_object.topics %v", len(topic_partition_object.topics))
 
 	for i := 0; i < len(topic_partition_object.topics); i++ {
 		topic_in_db, exists := models.DummyDb[topic_partition_object.topics[i].TopicName]

@@ -23,13 +23,13 @@ type Topic struct {
 
 func (topic *Topic) Deserialize(body []byte) ([]byte, error) {
 	cursor := 0
-	topic_name_length := int(body[cursor])
+	topic_name_length := int(body[cursor]) - 1
 
 	log.Printf("Extract topic from request, length %v", body[cursor])
 
 	offset_topic_name := cursor + 1
 
-	topic.TopicName = string(body[offset_topic_name : offset_topic_name+topic_name_length-1])
+	topic.TopicName = string(body[offset_topic_name : offset_topic_name+topic_name_length])
 	topic.TopicId = TOPIC_ID
 	cursor = offset_topic_name + topic_name_length + 1
 	log.Printf("Topic length %d Topic name %s\n", topic_name_length, string(body[offset_topic_name:offset_topic_name+topic_name_length]))
